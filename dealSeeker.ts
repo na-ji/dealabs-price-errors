@@ -1,10 +1,11 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-const { discordWebhook, telegramToken, telegramChatId, intervalBase } = require('./config');
+const { discordWebhook, telegramToken, telegramChatId, interval } = require('./config');
+const intervalBase = interval;
 
 export class DealSeeker {
   baseUrl;
-  interval = 1;
+  interval = 30;
   lastPageUrl = '';
   cache = {};
 
