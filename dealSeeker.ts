@@ -77,6 +77,11 @@ export class DealSeeker {
         return;
       }
 
+      if (dealLinks.length === 0) {
+        console.log('No link; nothing interesting to see here');
+        return;
+      }
+
       console.log(`Sending notification for comment ${comment.attr('id')}`);
       this.sendNotification({ commentText, dealLinks, commentLink }).catch((error) => {
         console.error(error);
