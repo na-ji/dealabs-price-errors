@@ -1,6 +1,7 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import { discordWebhook, telegramToken, telegramChatId, interval, slackWebhook } from './config.json';
+import { sendNotification } from './notificationSender';
+import { interval } from './config.json';
 const intervalBase = interval;
 
 export class DealSeeker {
@@ -16,32 +17,6 @@ export class DealSeeker {
     this.checkIfLinkExist = checkIfLinkExist;
     this.runner();
   }
-
-  sendNotification = async ({ commentText, dealLinks, commentLink }) => {
-    const output = `${commentText}\n\n${dealLinks.join('\n')}\n\n${commentLink}`;
-
-    if (discordWebhook && discordWebhook !== '') {
-      await axios.post(discordWebhook, {
-        username: 'Dealabs Price Error',
-        avatar_url: 'https://www.dealabs.com/favicon.ico',
-        content: output,
-      });
-    }
-
-    if (telegramToken && telegramToken !== '' && telegramChatId && telegramChatId !== '') {
-      await axios.get(
-        `https://api.telegram.org/bot${telegramToken}/sendMessage?chat_id=${telegramChatId}&parse_mode=markdown&text=${escape(
-          output,
-        )}`,
-      );
-    }
-
-    if (slackWebhook && slackWebhook !== '') {
-      await axios.post(slackWebhook, {
-        text: output,
-      });
-    }
-  };
 
   fetchNewComments = async (firstTime = false) => {
     console.log('Fetching page');
@@ -91,7 +66,7 @@ export class DealSeeker {
       }
 
       console.log(`Sending notification for comment ${comment.attr('id')}`);
-      this.sendNotification({ commentText, dealLinks, commentLink }).catch((error) => {
+      sendNotification({ commentText, dealLinks, commentLink }).catch((error) => {
         console.error(error);
       });
     });
