@@ -4,8 +4,10 @@
   "description": "",
   "main": "index.js",
   "scripts": {
+    "start": "ts-node index.ts",
     "commit": "git-cz",
-    "semantic-release": "semantic-release"
+    "semantic-release": "semantic-release",
+    "postinstall": "[ -f ./config.json ] && echo \"config.json file already exist\" || cp ./config.json.dist ./config.json"
   },
   "author": "",
   "license": "WTFPL",
@@ -27,7 +29,9 @@
     "husky": "^4.2.1",
     "lint-staged": "^10.0.2",
     "prettier": "^1.19.1",
-    "semantic-release": "^16.0.3"
+    "semantic-release": "^16.0.3",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5"
   },
   "prettier": {
     "printWidth": 120,
