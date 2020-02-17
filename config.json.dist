@@ -2,7 +2,6 @@
   "discordWebhook": null,
   "telegramToken": null,
   "telegramChatId": null,
-  "slackToken": null,
-  "slackChannelId": null,
+  "slackWebhook": null,
   "interval": 30
 }

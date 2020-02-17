@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-const { discordWebhook, telegramToken, telegramChatId, interval, slackToken } = require('./config');
+import { discordWebhook, telegramToken, telegramChatId, interval, slackWebhook } from './config.json';
 const intervalBase = interval;
 
 export class DealSeeker {
@@ -36,8 +36,8 @@ export class DealSeeker {
       );
     }
 
-    if (slackToken && slackToken !== '') {
-      await axios.post(slackToken, {
+    if (slackWebhook && slackWebhook !== '') {
+      await axios.post(slackWebhook, {
         text: output,
       });
     }
