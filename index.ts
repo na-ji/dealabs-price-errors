@@ -1,10 +1,12 @@
 import { DealSeeker } from './dealSeeker';
 
-const baseUrls = [
-  'https://www.dealabs.com/discussions/le-topic-des-erreurs-de-prix-1056379',
-  'https://www.dealabs.com/discussions/suivi-erreurs-de-prix-1063390',
-];
+const baseUrls = [{
+  url: 'https://www.dealabs.com/discussions/le-topic-des-erreurs-de-prix-1056379',
+}, {
+  url: 'https://www.dealabs.com/discussions/suivi-erreurs-de-prix-1063390',
+  checkUrl: true,
+}];
 
 (() => {
-  baseUrls.forEach((url) => new DealSeeker(url));
+  baseUrls.forEach((source) => new DealSeeker(source.url, undefined, source.checkUrl));
 })();

@@ -5,13 +5,15 @@ const intervalBase = interval;
 
 export class DealSeeker {
   baseUrl;
+  checkIfLinkExist;
   interval = 30;
   lastPageUrl = '';
   cache = {};
 
-  constructor(baseUrl: string, interval = intervalBase) {
+  constructor(baseUrl: string, interval = intervalBase, checkIfLinkExist?: boolean) {
     this.baseUrl = baseUrl;
     this.interval = interval;
+    this.checkIfLinkExist = checkIfLinkExist;
     this.runner();
   }
 
@@ -83,7 +85,7 @@ export class DealSeeker {
         return;
       }
 
-      if (dealLinks.length === 0) {
+      if (this.checkIfLinkExist && dealLinks.length === 0) {
         console.log('No link; nothing interesting to see here');
         return;
       }
