@@ -42,7 +42,7 @@ export class DealSeeker {
       const commentBody = comment.find('.comment-body .userHtml-content');
       const commentText = commentBody.text();
       const dealLinks = commentBody
-        .find('a')
+        .find('a:not(.userHtml-quote-source)')
         .map((_index, element) => {
           return $(element).attr('title');
         })
