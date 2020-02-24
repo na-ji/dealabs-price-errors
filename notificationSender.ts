@@ -45,7 +45,7 @@ export const sendNotification = async ({ commentText, dealLinks, commentLink }) 
         );
       case 'slack':
         return axios.post(channel.url, {
-          text: output,
+          text: `<!channel> ${output}`,
         });
       default:
         return null;
