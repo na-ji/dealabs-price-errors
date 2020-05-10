@@ -1,8 +1,11 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
+import Puppeteer from 'puppeteer';
 import { sendNotification } from './notificationSender';
 import { interval } from './config.json';
 const intervalBase = interval;
+
+const selector = 'span.cept-last-page.pagination-page > button';
 
 export class DealSeeker {
   baseUrl;
@@ -10,24 +13,35 @@ export class DealSeeker {
   interval = 30;
   lastPageUrl = '';
   cache = {};
+  puppeteerPage;
 
   constructor(baseUrl: string, interval = intervalBase, checkIfLinkExist?: boolean) {
     this.baseUrl = baseUrl;
     this.interval = interval;
     this.checkIfLinkExist = checkIfLinkExist;
-    this.runner();
+    Puppeteer.launch({args: ['--no-sandbox']})
+      .then((browser) => browser.newPage())
+      .then((page) => {
+        this.puppeteerPage = page;
+        this.runner();
+      });
   }
 
   fetchNewComments = async (firstTime = false) => {
     console.log('Fetching page');
-    const lastComments = await axios.get(this.lastPageUrl);
+    const lastComments = (async () => {
+      try {
+        return (await axios.get(this.lastPageUrl)).data;
+      } catch (e) {
+        return await this.puppeteerPage.evaluate(() => document.body.innerHTML);
+      }
+    });
 
-    const $ = cheerio.load(lastComments.data);
-    const nextPageElement = $('a.pagination-next');
+    const $ = cheerio.load(lastComments);
+    const nextPageElement = $(selector);
 
     if (nextPageElement.length > 0) {
-      this.lastPageUrl = nextPageElement.attr('href');
-      console.log('New page detected: ' + this.lastPageUrl);
+      await this.getLastPage(this.lastPageUrl);
 
       return this.fetchNewComments();
     }
@@ -72,11 +86,15 @@ export class DealSeeker {
     });
   };
 
-  runner = async () => {
-    const topicPage = await axios.get(this.baseUrl);
+  getLastPage = async (url) => {
+    await this.puppeteerPage.goto(url);
+    await this.puppeteerPage.click(selector);
 
-    const $ = cheerio.load(topicPage.data);
-    this.lastPageUrl = $('a.cept-last-page').attr('href');
+    this.lastPageUrl = this.puppeteerPage.url();
+  }
+
+  runner = async () => {
+    await this.getLastPage(this.baseUrl);
 
     if (!this.lastPageUrl) {
       console.error('lastPage not found');
