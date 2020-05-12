@@ -26,7 +26,7 @@ const channels: Channel[] = [{
   id: telegramChatId,
 }];
 
-export const sendNotification = async ({ commentText, dealLinks, commentLink }) => {
+export const sendNotification = async ({ commentText, dealLinks, commentLink }: { commentText: string, dealLinks?: any, commentLink?: string }) => {
   const output = `${commentText}\n\n${dealLinks.join('\n')}\n\n${commentLink}`;
 
   const notificationsList = channels.map((channel) => {
@@ -45,7 +45,7 @@ export const sendNotification = async ({ commentText, dealLinks, commentLink }) 
         );
       case 'slack':
         return axios.post(channel.url, {
-          text: `<!channel> ${output}`,
+          text: dealLinks ? `<!channel> ${output}` : output,
         });
       default:
         return null;

@@ -108,6 +108,7 @@ export class DealSeeker {
     setInterval(() => {
       this.fetchNewComments().catch((error) => {
         console.error(error);
+        sendNotification({ commentText: 'Error while fetching...' });
       });
     }, this.interval * 1000);
   };
