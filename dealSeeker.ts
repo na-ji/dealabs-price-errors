@@ -33,14 +33,16 @@ export class DealSeeker {
       try {
         return (await axios.get(this.lastPageUrl)).data;
       } catch (e) {
+        console.info('Puppeteer fallback');
         return await this.puppeteerPage.evaluate(() => document.body.innerHTML);
       }
-    });
+    })();
 
-    const $ = cheerio.load(lastComments);
+    const $ = cheerio.load(await lastComments);
     const nextPageElement = $(selector);
 
     if (nextPageElement.length > 0) {
+      console.info('Get next page...');
       await this.getLastPage(this.lastPageUrl);
 
       return this.fetchNewComments();
@@ -101,6 +103,7 @@ export class DealSeeker {
       process.exit(1);
     }
 
+    console.log('Start :', this.lastPageUrl);
     this.fetchNewComments(true).catch((error) => {
       console.error(error);
     });

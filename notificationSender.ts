@@ -27,7 +27,9 @@ const channels: Channel[] = [{
 }];
 
 export const sendNotification = async ({ commentText, dealLinks, commentLink }: { commentText: string, dealLinks?: any, commentLink?: string }) => {
-  const output = `${commentText}\n\n${dealLinks.join('\n')}\n\n${commentLink}`;
+  const output = (commentLink && dealLinks)
+    ? `${commentText}\n\n${dealLinks.join('\n')}\n\n${commentLink}`
+    : commentText;
 
   const notificationsList = channels.map((channel) => {
     switch (channel.type) {
