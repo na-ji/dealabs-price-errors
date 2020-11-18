@@ -1,76 +1,99 @@
 import axios from 'axios';
 import * as cheerio from 'cheerio';
-import Puppeteer from 'puppeteer';
+import TurndownService from 'turndown';
 import { sendNotification } from './notificationSender';
 import { interval } from './config.json';
+import { GraphQLResponse } from './model';
 const intervalBase = interval;
 
-const selector = 'span.cept-last-page.pagination-page > button';
-
-export class DealSeeker {
-  baseUrl;
-  checkIfLinkExist;
-  interval = 30;
-  lastPageUrl = '';
-  cache = {};
-  puppeteerPage;
-
-  constructor(baseUrl: string, interval = intervalBase, checkIfLinkExist?: boolean) {
-    this.baseUrl = baseUrl;
-    this.interval = interval;
-    this.checkIfLinkExist = checkIfLinkExist;
-    Puppeteer.launch({args: ['--no-sandbox']})
-      .then((browser) => browser.newPage())
-      .then((page) => {
-        this.puppeteerPage = page;
-        this.runner();
-      });
+const graphQlQuery = `
+  query comments($filter: CommentFilter!, $limit: Int, $page: Int) {
+    comments(filter: $filter, limit: $limit, page: $page) {
+      items {
+        ...commentFields
+      }
+      pagination {
+        ...paginationFields
+      }
+    }
   }
 
+  fragment commentFields on Comment {
+    commentId
+    threadId
+    url
+    preparedHtmlContent
+    likes
+  }
+
+  fragment paginationFields on Pagination {
+    count
+    current
+    last
+    next
+    previous
+  }
+`;
+
+const apiUrl = 'https://www.dealabs.com/graphql';
+
+const turndownService = new TurndownService();
+
+export class DealSeeker {
+  threadId;
+  checkIfLinkExist;
+  interval = 30;
+  lastPage = 0;
+  cache = {};
+
+  constructor(threadId: string, interval = intervalBase, checkIfLinkExist?: boolean) {
+    this.threadId = threadId;
+    this.interval = interval;
+    this.checkIfLinkExist = checkIfLinkExist;
+
+    void this.runner();
+  }
+
+  queryApi = async (page = 1): Promise<GraphQLResponse> => {
+    return (
+      await axios.post<GraphQLResponse>(apiUrl, {
+        query: graphQlQuery,
+        variables: { filter: { threadId: { eq: this.threadId }, order: null }, page },
+      })
+    ).data;
+  };
+
   fetchNewComments = async (firstTime = false) => {
-    console.log('Fetching page');
-    const lastComments = (async () => {
-      try {
-        return (await axios.get(this.lastPageUrl)).data;
-      } catch (e) {
-        console.info('Puppeteer fallback');
-        return await this.puppeteerPage.evaluate(() => document.body.innerHTML);
-      }
-    })();
+    console.log(`Fetching page #${this.lastPage} of thread #${this.threadId}`);
 
-    const $ = cheerio.load(await lastComments);
-    const nextPageElement = $(selector);
+    const response = await this.queryApi(this.lastPage);
 
-    if (nextPageElement.length > 0) {
+    if (response.data.comments.pagination.next) {
       console.info('Get next page...');
-      await this.getLastPage(this.lastPageUrl);
+      this.lastPage = response.data.comments.pagination.last;
 
       return this.fetchNewComments();
     }
 
-    $('.comments-list-item').each((_index, element) => {
-      const comment = $(element);
+    const { items: comments } = response.data.comments;
 
-      if (comment.attr('id') in this.cache) {
+    comments.forEach((comment) => {
+      if (comment.commentId in this.cache) {
         return;
       }
 
-      const commentBody = comment.find('.comment-body .userHtml-content');
-      const commentText = commentBody.text();
+      const $ = cheerio.load(`<comment>${comment.preparedHtmlContent}</comment>`);
+      const commentBody = $('comment');
+      const commentText = turndownService.turndown(comment.preparedHtmlContent);
       const dealLinks = commentBody
         .find('a:not(.userHtml-quote-source)')
         .map((_index, element) => {
           return $(element).attr('title');
         })
         .get();
-      const commentLink = JSON.parse(
-        comment
-          .find('.comment-footer button')
-          .last()
-          .attr('data-popover'),
-      ).tplData.url;
+      const commentLink = `https://www.dealabs.com/comments/permalink/${comment.commentId}`;
 
-      this.cache[comment.attr('id')] = commentText;
+      this.cache[comment.commentId] = commentText;
 
       if (firstTime) {
         return;
@@ -81,29 +104,28 @@ export class DealSeeker {
         return;
       }
 
-      console.log(`Sending notification for comment ${comment.attr('id')}`);
+      console.log(`Sending notification for comment ${comment.commentId}`);
+
       sendNotification({ commentText, dealLinks, commentLink }).catch((error) => {
         console.error(error);
       });
     });
   };
 
-  getLastPage = async (url) => {
-    await this.puppeteerPage.goto(url);
-    await this.puppeteerPage.click(selector);
+  getLastPage = async () => {
+    const response = await this.queryApi();
 
-    this.lastPageUrl = this.puppeteerPage.url();
-  }
+    this.lastPage = response.data.comments.pagination.last;
+  };
 
   runner = async () => {
-    await this.getLastPage(this.baseUrl);
+    await this.getLastPage();
 
-    if (!this.lastPageUrl) {
+    if (!this.lastPage) {
       console.error('lastPage not found');
       process.exit(1);
     }
 
-    console.log('Start :', this.lastPageUrl);
     this.fetchNewComments(true).catch((error) => {
       console.error(error);
     });
