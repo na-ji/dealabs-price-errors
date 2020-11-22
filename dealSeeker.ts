@@ -46,6 +46,17 @@ const apiUrl = 'https://www.dealabs.com/graphql';
 
 const turndownService = new TurndownService();
 
+turndownService.addRule('strikethrough', {
+  filter: function(node, options) {
+    return options.linkStyle === 'inlined' && node.nodeName === 'A' && !!node.getAttribute('href');
+  },
+  replacement: function(content, node) {
+    // @ts-ignore
+    const href = node.getAttribute('href');
+    return `<${href}|${content}>`;
+  },
+});
+
 export class DealSeeker {
   threadId;
   checkIfLinkExist;
