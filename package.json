@@ -12,9 +12,12 @@
   "author": "",
   "license": "WTFPL",
   "dependencies": {
+    "@types/tough-cookie": "^4.0.0",
     "axios": "^0.19.2",
+    "axios-cookiejar-support": "^1.0.1",
     "cheerio": "^1.0.0-rc.3",
     "puppeteer": "^3.0.4",
+    "tough-cookie": "^4.0.0",
     "turndown": "^7.0.0"
   },
   "devDependencies": {
@@ -44,8 +47,7 @@
   },
   "lint-staged": {
     "*.js": [
-      "prettier --write",
-      "git add"
+      "prettier --write"
     ]
   },
   "husky": {

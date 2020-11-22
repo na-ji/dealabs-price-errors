@@ -1,10 +1,17 @@
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import * as cheerio from 'cheerio';
 import TurndownService from 'turndown';
+import axiosCookieJarSupport from 'axios-cookiejar-support';
+import tough from 'tough-cookie';
 import { sendNotification } from './notificationSender';
 import { interval } from './config.json';
 import { GraphQLResponse } from './model';
 const intervalBase = interval;
+
+const http = axios.create({ withCredentials: true });
+
+axiosCookieJarSupport(http);
+http.defaults.jar = new tough.CookieJar();
 
 const graphQlQuery = `
   query comments($filter: CommentFilter!, $limit: Int, $page: Int) {
@@ -51,16 +58,31 @@ export class DealSeeker {
     this.interval = interval;
     this.checkIfLinkExist = checkIfLinkExist;
 
-    void this.runner();
+    http.get(`https://www.dealabs.com/discussions/suivi-erreurs-de-prix-${this.threadId}`).then(() => {
+      void this.runner();
+    });
   }
 
-  queryApi = async (page = 1): Promise<GraphQLResponse> => {
-    return (
-      await axios.post<GraphQLResponse>(apiUrl, {
-        query: graphQlQuery,
-        variables: { filter: { threadId: { eq: this.threadId }, order: null }, page },
-      })
-    ).data;
+  queryApi = async (page = 1, hasError = false): Promise<GraphQLResponse> => {
+    try {
+      return (
+        await http.post<GraphQLResponse>(apiUrl, {
+          query: graphQlQuery,
+          variables: { filter: { threadId: { eq: this.threadId }, order: null }, page },
+        })
+      ).data;
+    } catch (err) {
+      const error = err as AxiosError;
+
+      if (error.response.status === 418 && !hasError) {
+        console.log('Teapot detected, renewing cookies');
+        await http.get(`https://www.dealabs.com/discussions/suivi-erreurs-de-prix-${this.threadId}`);
+
+        return this.queryApi(page, true);
+      }
+
+      throw error;
+    }
   };
 
   fetchNewComments = async (firstTime = false) => {
