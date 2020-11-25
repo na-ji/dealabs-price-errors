@@ -52,7 +52,7 @@ const apiUrl = 'https://www.dealabs.com/graphql';
 
 const turndownService = new TurndownService();
 
-turndownService.addRule('strikethrough', {
+turndownService.addRule('link', {
   filter: function(node, options) {
     return options.linkStyle === 'inlined' && node.nodeName === 'A' && !!node.getAttribute('href');
   },
@@ -60,6 +60,18 @@ turndownService.addRule('strikethrough', {
     // @ts-ignore
     const href = node.getAttribute('href');
     return `<${href}|${content}>`;
+  },
+});
+
+// display images as links, since not supported
+turndownService.addRule('image', {
+  filter: 'img',
+  replacement: function(content, node) {
+    // @ts-ignore
+    const alt = node.getAttribute('alt');
+    // @ts-ignore
+    const src = node.getAttribute('src') || '';
+    return src ? `<${src}${alt ? `|${alt}` : ''}>` : '';
   },
 });
 
