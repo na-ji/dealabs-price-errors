@@ -8,7 +8,13 @@ import { interval } from './config.json';
 import { GraphQLResponse } from './model';
 const intervalBase = interval;
 
-const http = axios.create({ withCredentials: true });
+const http = axios.create({
+  withCredentials: true,
+  headers: {
+    'user-agent':
+      'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36',
+  },
+});
 
 axiosCookieJarSupport(http);
 http.defaults.jar = new tough.CookieJar();
