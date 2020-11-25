@@ -58,18 +58,21 @@ turndownService.addRule('strikethrough', {
 });
 
 export class DealSeeker {
-  threadId;
   checkIfLinkExist;
   interval = 30;
   lastPage = 0;
   cache = {};
 
-  constructor(threadId: string, interval = intervalBase, checkIfLinkExist?: boolean) {
-    this.threadId = threadId;
+  constructor(
+    private readonly threadId: string,
+    private readonly threadUrl: string,
+    interval = intervalBase,
+    checkIfLinkExist?: boolean,
+  ) {
     this.interval = interval;
     this.checkIfLinkExist = checkIfLinkExist;
 
-    http.get(`https://www.dealabs.com/discussions/suivi-erreurs-de-prix-${this.threadId}`).then(() => {
+    http.get(this.threadUrl).then((response) => {
       void this.runner();
     });
   }
@@ -77,17 +80,21 @@ export class DealSeeker {
   queryApi = async (page = 1, hasError = false): Promise<GraphQLResponse> => {
     try {
       return (
-        await http.post<GraphQLResponse>(apiUrl, {
-          query: graphQlQuery,
-          variables: { filter: { threadId: { eq: this.threadId }, order: null }, page },
-        })
+        await http.post<GraphQLResponse>(
+          apiUrl,
+          {
+            query: graphQlQuery,
+            variables: { filter: { threadId: { eq: this.threadId }, order: null }, page },
+          },
+          { headers: { referer: this.threadUrl } },
+        )
       ).data;
     } catch (err) {
       const error = err as AxiosError;
 
       if (error.response.status === 418 && !hasError) {
         console.log('Teapot detected, renewing cookies');
-        await http.get(`https://www.dealabs.com/discussions/suivi-erreurs-de-prix-${this.threadId}`);
+        await http.get(this.threadUrl);
 
         return this.queryApi(page, true);
       }
