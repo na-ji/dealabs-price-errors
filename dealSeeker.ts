@@ -122,7 +122,7 @@ export class DealSeeker {
   };
 
   fetchNewComments = async (firstTime = false) => {
-    console.log(`Fetching page #${this.lastPage} of thread #${this.threadId}`);
+    console.info(`Fetching page #${this.lastPage} of thread #${this.threadId}`);
 
     const response = await this.queryApi(this.lastPage);
 
@@ -158,7 +158,7 @@ export class DealSeeker {
       }
 
       if (this.checkIfLinkExist && dealLinks.length === 0) {
-        console.log('No link; nothing interesting to see here');
+        console.info('No link; nothing interesting to see here');
         return;
       }
 
