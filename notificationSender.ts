@@ -34,19 +34,19 @@ export const sendNotification = async ({ commentText, dealLinks, commentLink }: 
   const notificationsList = channels.map((channel) => {
     switch (channel.type) {
       case 'discord':
-        return axios.post(channel.url, {
+        return channel.url && axios.post(channel.url, {
           username: 'Dealabs Price Error',
           avatar_url: 'https://www.dealabs.com/favicon.ico',
           content: output,
         });
       case 'telegram':
-        return axios.get(
+        return channel.id && channel.token && axios.get(
           `https://api.telegram.org/bot${channel.token}/sendMessage?chat_id=${channel.id}&parse_mode=markdown&text=${escape(
             output,
           )}`,
         );
       case 'slack':
-        return axios.post(channel.url, {
+        return channel.url && axios.post(channel.url, {
           text: dealLinks ? `<!channel> ${output}` : output,
         });
       default:
