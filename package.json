@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "ts-node index.ts",
+    "start": "npm run testconfig && ts-node index.ts",
+    "testconfig": "ts-node configtest.ts",
     "commit": "git-cz",
     "semantic-release": "semantic-release",
     "postinstall": "[ -f ./config.json ] && echo \"config.json file already exist\" || cp ./config.json.dist ./config.json"
